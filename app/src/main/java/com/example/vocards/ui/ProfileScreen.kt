@@ -33,9 +33,8 @@ fun ProfileScreen(
     val email by viewModel.userEmail.collectAsState()
     val isDark by viewModel.darkMode.collectAsState()
     val dailyGoal by viewModel.dailyGoal.collectAsState()
-    
-    var notificationsEnabled by remember { mutableStateOf(true) }
-    var soundEnabled by remember { mutableStateOf(true) }
+    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+    val soundEnabled by viewModel.soundEnabled.collectAsState()
 
     Scaffold(
         containerColor = QuizeeDarkBg,
@@ -99,13 +98,13 @@ fun ProfileScreen(
                     title = "Push Notifications",
                     icon = Icons.Default.Notifications,
                     checked = notificationsEnabled,
-                    onCheckedChange = { notificationsEnabled = it }
+                    onCheckedChange = { viewModel.saveNotifications(it) }
                 )
                 SettingsToggleItem(
                     title = "Study Sounds",
                     icon = Icons.Default.VolumeUp,
                     checked = soundEnabled,
-                    onCheckedChange = { soundEnabled = it }
+                    onCheckedChange = { viewModel.saveSound(it) }
                 )
             }
 

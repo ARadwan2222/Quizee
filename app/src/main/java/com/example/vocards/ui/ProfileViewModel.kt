@@ -31,12 +31,26 @@ class ProfileViewModel(private val userPreferences: UserPreferences) : ViewModel
     val isFirstTime: StateFlow<Boolean> = userPreferences.firstTimeUse
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val notificationsEnabled: StateFlow<Boolean> = userPreferences.notificationsEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val soundEnabled: StateFlow<Boolean> = userPreferences.soundEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     fun completeWelcome() {
         viewModelScope.launch { userPreferences.setFirstTimeUse(false) }
     }
 
     fun saveDarkMode(enabled: Boolean) {
         viewModelScope.launch { userPreferences.saveDarkMode(enabled) }
+    }
+
+    fun saveNotifications(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.saveNotificationsEnabled(enabled) }
+    }
+
+    fun saveSound(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.saveSoundEnabled(enabled) }
     }
 
     fun saveDailyGoal(goal: Int) {

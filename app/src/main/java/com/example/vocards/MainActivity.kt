@@ -86,9 +86,10 @@ class MainActivity : ComponentActivity() {
             val profileViewModel: ProfileViewModel = viewModel(factory = factory)
             
             val lang by profileViewModel.appLanguage.collectAsState()
+            val isDarkModePref by profileViewModel.darkMode.collectAsState()
             
-            // Force Dark Theme for the new design
-            val darkTheme = true
+            // Apply Dark Theme preference, default to true
+            val darkTheme = isDarkModePref ?: true
 
             LaunchedEffect(lang) { ttsManager.setLanguage(lang) }
 
@@ -660,7 +661,7 @@ fun VocadApp(
                         }
                     }
                     Spacer(Modifier.width(8.dp))
-                    Text(userEmail?.substringBefore("@") ?: "you", color = Color.White, fontSize = 14.sp)
+                    Text("${currentProject?.fromLanguage} \u2192 ${currentProject?.toLanguage}", color = QuizeeSecondaryText, fontSize = 14.sp)
                     Spacer(Modifier.width(12.dp))
                     Text("${vocads.size} terms", color = QuizeeSecondaryText, fontSize = 14.sp)
                 }

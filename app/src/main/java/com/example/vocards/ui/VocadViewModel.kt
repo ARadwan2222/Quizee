@@ -116,46 +116,53 @@ class VocadViewModel(
     fun importVocads(rawText: String, projectId: Int) {
         viewModelScope.launch {
             val targetId = if (projectId == -1) {
-                repository.insertProject(Project(name = "New Import")).toInt()
+                repository.insertProject(Project(name = "Imported Mission")).toInt()
             } else projectId
 
-            if (rawText.trim().startsWith("{") || rawText.trim().startsWith("[")) {
+            val trimmedText = rawText.trim()
+            if (trimmedText.startsWith("{") || trimmedText.startsWith("[")) {
                 try {
-                    val array = if (rawText.trim().startsWith("{")) {
-                        JSONObject(rawText).optJSONArray("words") ?: JSONArray()
+                    val array = if (trimmedText.startsWith("[")) {
+                        JSONArray(trimmedText)
                     } else {
-                        JSONArray(rawText)
+                        val json = JSONObject(trimmedText)
+                        json.optJSONArray("words") ?: json.optJSONArray("vocads") ?: JSONArray()
                     }
+                    
                     for (i in 0 until array.length()) {
                         val obj = array.getJSONObject(i)
-                        repository.insertVocad(Vocad(
-                            projectId = targetId,
-                            word = obj.optString("word", obj.optString("term")),
-                            definition = obj.optString("definition", obj.optString("meaning")),
-                            example = obj.optString("example").ifBlank { null }
-                        ))
+                        val word = obj.optString("word", obj.optString("term", ""))
+                        val definition = obj.optString("definition", obj.optString("meaning", ""))
+                        if (word.isNotBlank() && definition.isNotBlank()) {
+                            repository.insertVocad(Vocad(
+                                projectId = targetId,
+                                word = word,
+                                definition = definition,
+                                example = obj.optString("example", "").ifBlank { null }
+                            ))
+                        }
                     }
                     return@launch
-                } catch (ignored: Exception) { }
+                } catch (e: Exception) { }
             }
 
-            val lines = rawText.lines().filter { it.isNotBlank() }
+            val lines = rawText.lines().map { it.trim() }.filter { it.isNotBlank() }
             for (line in lines) {
-                val parts = when {
-                    line.contains(" - ") -> line.split(" - ")
-                    line.contains("\t") -> line.split("\t")
-                    line.contains(",") -> line.split(",")
-                    line.contains(":") -> line.split(":")
-                    else -> listOf(line)
-                }
+                val separators = listOf(" - ", "\t", ":", ",")
+                val bestSeparator = separators.maxByOrNull { line.split(it).size } ?: " - "
+                val parts = line.split(bestSeparator)
                 
                 if (parts.size >= 2) {
-                    repository.insertVocad(Vocad(
-                        projectId = targetId, 
-                        word = parts[0].trim(), 
-                        definition = parts[1].trim(),
-                        example = if (parts.size > 2) parts[2].trim() else null
-                    ))
+                    val word = parts[0].trim()
+                    val definition = parts[1].trim()
+                    if (word.isNotBlank() && definition.isNotBlank()) {
+                        repository.insertVocad(Vocad(
+                            projectId = targetId,
+                            word = word,
+                            definition = definition,
+                            example = if (parts.size > 2) parts[2].trim() else null
+                        ))
+                    }
                 }
             }
         }
