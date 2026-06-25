@@ -13,34 +13,33 @@ import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
     primary = QuizeeAccent,
-    secondary = LitePurpleSecondary,
-    tertiary = LitePurpleTertiary,
+    secondary = QuizeeLightPurple,
+    tertiary = Color(0xFF7B1FA2),
     background = QuizeeDarkBg,
-    surface = QuizeeCardBg
+    surface = QuizeeCardBg,
+    onPrimary = Color.White,
+    onBackground = Color.White,
+    onSurface = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = QuizeeAccent,
-    secondary = LitePurpleSecondary,
+    secondary = QuizeeLightPurple,
     tertiary = LitePurpleTertiary,
-    background = Color.White,
-    surface = Color.White
+    background = Color(0xFFF8F9FA),
+    surface = Color.White,
+    onPrimary = Color.White,
+    onBackground = Color(0xFF1C1B1F),
+    onSurface = Color(0xFF1C1B1F)
 )
 
 @Composable
 fun VocadsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Disabled for consistent Lite Purple look
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,

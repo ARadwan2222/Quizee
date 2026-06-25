@@ -132,7 +132,6 @@ fun ProfileScreen(
                 }
             }
 
-            // --- Account Actions ---
             SettingsSection(title = "Account") {
                 SettingsActionItem(title = "Language Settings", icon = Icons.Default.Language) { 
                     /* Navigate to specific lang settings if needed */
@@ -146,6 +145,14 @@ fun ProfileScreen(
                     onBack() // Or navigate to welcome
                 }
             }
+
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "Quizee Version 1.1",
+                color = QuizeeSecondaryText,
+                fontSize = 12.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
 
             Spacer(Modifier.height(32.dp))
         }
