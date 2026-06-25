@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "402469927230",
+    "project_id": "quizee-c18dc",
+    "storage_bucket": "quizee-c18dc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:402469927230:android:30457c59546eb4f1d7546f",
+        "android_client_info": {
+          "package_name": "com.example.vocards"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "402469927230-onb8v95bqjq6ub37st930v6t259g68gv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vocards",
+            "certificate_hash": "e408fd992a793b327c061e238d4de5c698ed580a"
+          }
+        },
+        {
+          "client_id": "402469927230-aieqlsflrca43p0q0p7i1014asl6ta2r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4jSqfKUXCtQNyUxQ7xMLB3GcPVad49gI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "402469927230-aieqlsflrca43p0q0p7i1014asl6ta2r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
