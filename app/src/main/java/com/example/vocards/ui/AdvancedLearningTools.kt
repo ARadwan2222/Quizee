@@ -12,21 +12,22 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.vocards.data.Vocad
+import com.example.vocards.fetchDefinition
 import com.example.vocards.ui.theme.*
 import kotlinx.coroutines.delay
-import java.util.Locale
+import kotlinx.coroutines.launch
 
 val TopPopularLanguages = listOf(
     "English" to "en-US", "Spanish" to "es-ES", "Chinese" to "zh-CN", "Hindi" to "hi-IN",
@@ -38,15 +39,48 @@ val TopPopularLanguages = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VoiceCorrectionScreen(onBack: () -> Unit) {
+fun VoiceCorrectionScreen(
+    viewModel: VocadViewModel,
+    onSpeak: (String, String?) -> Unit,
+    onBack: () -> Unit
+) {
+    val vocads by viewModel.allVocadsState.collectAsState()
+    val projects by viewModel.projectsState.collectAsState()
+    
     var recognizedText by remember { mutableStateOf("") }
     var selectedLang by remember { mutableStateOf("en-US") }
-    
+    var onlineDefinition by remember { mutableStateOf<String?>(null) }
+    var isSearchingOnline by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         val data = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-        recognizedText = data?.get(0) ?: "Could not recognize"
+        val text = data?.get(0) ?: ""
+        recognizedText = text
+        onlineDefinition = null
+        if (text.isNotBlank()) {
+            val matchingInDb = vocads.any { it.word.equals(text, ignoreCase = true) || it.definition.equals(text, ignoreCase = true) }
+            if (!matchingInDb) {
+                scope.launch {
+                    isSearchingOnline = true
+                    val res = fetchDefinition(text)
+                    onlineDefinition = res?.first
+                    isSearchingOnline = false
+                }
+            }
+        }
+    }
+
+    // Offline search in user's saved vocads
+    val matchingVocads = remember(recognizedText, vocads) {
+        if (recognizedText.isBlank()) emptyList()
+        else vocads.filter { 
+            it.word.contains(recognizedText, ignoreCase = true) || 
+            it.definition.contains(recognizedText, ignoreCase = true) ||
+            recognizedText.contains(it.word, ignoreCase = true)
+        }
     }
 
     Scaffold(
@@ -60,19 +94,20 @@ fun VoiceCorrectionScreen(onBack: () -> Unit) {
         }
     ) { padding ->
         Column(
-            modifier = Modifier.padding(padding).fillMaxSize().padding(24.dp),
+            modifier = Modifier.padding(padding).fillMaxSize().padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Speak to check your pronunciation", style = MaterialTheme.typography.titleMedium, color = Color.White)
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
             
             Text("Target Language:", style = MaterialTheme.typography.labelSmall, color = QuizeeSecondaryText)
-            LazyRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Spacer(Modifier.height(4.dp))
+            LazyRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(TopPopularLanguages) { (name, code) ->
                     FilterChip(
                         selected = selectedLang == code,
                         onClick = { selectedLang = code },
-                        label = { Text(name, fontSize = 10.sp, color = if (selectedLang == code) Color.Black else Color.White) },
+                        label = { Text(name, fontSize = 11.sp, color = if (selectedLang == code) Color.Black else Color.White) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = QuizeeAccent,
                             containerColor = Color(0xFF1E2235)
@@ -81,18 +116,118 @@ fun VoiceCorrectionScreen(onBack: () -> Unit) {
                 }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(16.dp))
             
-            if (recognizedText.isNotBlank()) {
-                Card(colors = CardDefaults.cardColors(containerColor = QuizeeCardBg)) {
-                    Text(recognizedText, modifier = Modifier.padding(24.dp), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center, color = Color.White)
+            LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (recognizedText.isNotBlank()) {
+                    item {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = QuizeeCardBg),
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Recognized Speech", style = MaterialTheme.typography.labelSmall, color = QuizeeSecondaryText)
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    recognizedText, 
+                                    style = MaterialTheme.typography.headlineSmall, 
+                                    fontWeight = FontWeight.Bold, 
+                                    textAlign = TextAlign.Center, 
+                                    color = Color.White
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                Button(
+                                    onClick = { onSpeak(recognizedText, selectedLang) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = QuizeeAccent)
+                                ) {
+                                    Icon(Icons.AutoMirrored.Filled.VolumeUp, null, Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Listen Pronunciation")
+                                }
+                            }
+                        }
+                    }
+
+                    if (matchingVocads.isNotEmpty()) {
+                        item {
+                            Text(
+                                "Matches in Offline Collection (${matchingVocads.size})", 
+                                style = MaterialTheme.typography.titleSmall, 
+                                color = Color.Green,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        items(matchingVocads) { vocad ->
+                            val projName = projects.find { it.id == vocad.projectId }?.name ?: "Collection"
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2235)),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(Modifier.padding(16.dp)) {
+                                    Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                                        Text(vocad.word, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                        IconButton(onClick = { onSpeak(vocad.word, selectedLang) }) {
+                                            Icon(Icons.AutoMirrored.Filled.VolumeUp, null, tint = QuizeeAccent)
+                                        }
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("Meaning: ${vocad.definition}", color = Color.White.copy(0.9f), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                    vocad.example?.let {
+                                        Spacer(Modifier.height(4.dp))
+                                        Text("Example: \"$it\"", color = QuizeeSecondaryText, fontSize = 13.sp, fontStyle = FontStyle.Italic)
+                                    }
+                                    Spacer(Modifier.height(6.dp))
+                                    Text("Collection: $projName", color = QuizeeAccent, fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    } else {
+                        item {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2235)),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(Modifier.padding(16.dp)) {
+                                    if (isSearchingOnline) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            CircularProgressIndicator(Modifier.size(20.dp), color = QuizeeAccent)
+                                            Spacer(Modifier.width(12.dp))
+                                            Text("Searching online definition...", color = Color.White)
+                                        }
+                                    } else if (onlineDefinition != null) {
+                                        Text("Meaning (Online):", color = QuizeeSecondaryText, fontSize = 12.sp)
+                                        Text(onlineDefinition!!, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                    } else {
+                                        Text("Meaning:", color = QuizeeSecondaryText, fontSize = 12.sp)
+                                        Text("Word not found in offline collections.", color = Color.White.copy(0.7f), fontSize = 14.sp)
+                                        Text("💡 Offline lookup searches all saved project words automatically.", color = QuizeeSecondaryText, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    item {
+                        Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                            Text("Press the mic button below and speak a word.", color = QuizeeSecondaryText, textAlign = TextAlign.Center)
+                        }
+                    }
                 }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(16.dp))
             
             Surface(
-                modifier = Modifier.size(100.dp),
+                modifier = Modifier.size(80.dp),
                 shape = CircleShape,
                 color = QuizeeAccent,
                 onClick = {
@@ -105,29 +240,48 @@ fun VoiceCorrectionScreen(onBack: () -> Unit) {
                 }
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Mic, null, Modifier.size(40.dp), tint = Color.White)
+                    Icon(Icons.Default.Mic, null, Modifier.size(36.dp), tint = Color.White)
                 }
             }
-            Text("Tap to Start", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp), color = QuizeeSecondaryText)
-            Spacer(Modifier.height(48.dp))
+            Text("Tap Mic to Start Speaking", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp), color = QuizeeSecondaryText)
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PassiveListeningScreen(viewModel: VocadViewModel, onSpeak: (String) -> Unit, onBack: () -> Unit) {
+fun PassiveListeningScreen(
+    viewModel: VocadViewModel, 
+    onSpeak: (String, String?) -> Unit, 
+    onBack: () -> Unit
+) {
     val vocads by viewModel.allVocadsState.collectAsState()
+    val projects by viewModel.projectsState.collectAsState()
     var isPlaying by remember { mutableStateOf(false) }
     var currentIndex by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(isPlaying) {
-        while (isPlaying && vocads.isNotEmpty()) {
+    val currentVocad = if (vocads.isNotEmpty() && currentIndex < vocads.size) vocads[currentIndex] else null
+    val currentProject = remember(currentVocad, projects) {
+        projects.find { it.id == currentVocad?.projectId }
+    }
+
+    LaunchedEffect(isPlaying, currentIndex, vocads, projects) {
+        if (isPlaying && vocads.isNotEmpty()) {
             val vocad = vocads[currentIndex]
-            onSpeak(vocad.word)
+            val project = projects.find { it.id == vocad.projectId }
+            val wordLang = project?.fromLanguage ?: "English"
+            val defLang = project?.toLanguage ?: "Arabic"
+
+            // Speak word in source language
+            onSpeak(vocad.word, wordLang)
             delay(2500)
-            onSpeak(vocad.definition)
+            if (!isPlaying) return@LaunchedEffect
+            
+            // Speak definition in target language
+            onSpeak(vocad.definition, defLang)
             delay(3500)
+            if (!isPlaying) return@LaunchedEffect
             
             if (currentIndex < vocads.size - 1) {
                 currentIndex++
@@ -148,33 +302,77 @@ fun PassiveListeningScreen(viewModel: VocadViewModel, onSpeak: (String) -> Unit,
         }
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Default.Headset, null, modifier = Modifier.size(80.dp), tint = QuizeeAccent.copy(alpha = 0.5f))
-            Spacer(Modifier.height(24.dp))
-            Text("Relax and listen to your vocabulary mission collection.", textAlign = TextAlign.Center, color = Color.White)
+            Icon(Icons.Default.Headset, null, modifier = Modifier.size(70.dp), tint = QuizeeAccent.copy(alpha = 0.8f))
+            Spacer(Modifier.height(16.dp))
+            Text("Relax and listen to your vocabulary in both languages.", textAlign = TextAlign.Center, color = Color.White)
             
+            if (currentProject != null) {
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    color = Color(0xFF1E2235),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        "${currentProject.name} (${currentProject.fromLanguage} \u2192 ${currentProject.toLanguage})",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        color = QuizeeAccent,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
             Spacer(Modifier.weight(1f))
             
-            if (vocads.isNotEmpty()) {
-                val current = vocads[currentIndex]
-                Text(current.word, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(current.definition, style = MaterialTheme.typography.headlineSmall, color = QuizeeSecondaryText, textAlign = TextAlign.Center)
-                Text("${currentIndex + 1} / ${vocads.size}", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 16.dp), color = QuizeeSecondaryText)
+            if (currentVocad != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = QuizeeCardBg)
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(currentVocad.word, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(12.dp))
+                        Text(currentVocad.definition, style = MaterialTheme.typography.headlineSmall, color = QuizeeSecondaryText, textAlign = TextAlign.Center)
+                        currentVocad.example?.let {
+                            Spacer(Modifier.height(8.dp))
+                            Text("\"$it\"", style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic, color = Color.White.copy(0.6f), textAlign = TextAlign.Center)
+                        }
+                    }
+                }
+                Text("${currentIndex + 1} / ${vocads.size}", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 16.dp), color = QuizeeSecondaryText)
             } else {
                 Text("No words found in your projects.", color = Color.White)
             }
             
             Spacer(Modifier.weight(1f))
             
-            Button(
-                onClick = { isPlaying = !isPlaying },
-                shape = CircleShape,
-                modifier = Modifier.size(80.dp),
-                contentPadding = PaddingValues(0.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = if (isPlaying) Color.Red else QuizeeAccent)
-            ) {
-                Icon(if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, null, Modifier.size(40.dp), tint = Color.White)
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { if (currentIndex > 0) currentIndex-- else if (vocads.isNotEmpty()) currentIndex = vocads.size - 1 },
+                    enabled = vocads.isNotEmpty()
+                ) {
+                    Icon(Icons.Default.SkipPrevious, null, Modifier.size(36.dp), tint = Color.White)
+                }
+                
+                Button(
+                    onClick = { isPlaying = !isPlaying },
+                    shape = CircleShape,
+                    modifier = Modifier.size(72.dp),
+                    contentPadding = PaddingValues(0.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isPlaying) Color.Red else QuizeeAccent)
+                ) {
+                    Icon(if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, null, Modifier.size(36.dp), tint = Color.White)
+                }
+                
+                IconButton(
+                    onClick = { if (currentIndex < vocads.size - 1) currentIndex++ else currentIndex = 0 },
+                    enabled = vocads.isNotEmpty()
+                ) {
+                    Icon(Icons.Default.SkipNext, null, Modifier.size(36.dp), tint = Color.White)
+                }
             }
-            Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height(32.dp))
         }
     }
 }

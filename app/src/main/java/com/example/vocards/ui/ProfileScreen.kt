@@ -1,6 +1,5 @@
 package com.example.vocards.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,21 +31,17 @@ fun ProfileScreen(
     val email by viewModel.userEmail.collectAsState()
     val isDark by viewModel.darkMode.collectAsState()
     val dailyGoal by viewModel.dailyGoal.collectAsState()
-    
-    var notificationsEnabled by remember { mutableStateOf(true) }
-    var soundEnabled by remember { mutableStateOf(true) }
 
     Scaffold(
-        containerColor = QuizeeDarkBg,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Settings", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Settings", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                }
             )
         }
     ) { padding ->
@@ -59,35 +53,22 @@ fun ProfileScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // --- Profile Header ---
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
             ) {
-                Surface(
-                    modifier = Modifier.size(70.dp),
-                    shape = CircleShape,
-                    color = Color(0xFF9C27B0)
-                ) {
+                Surface(modifier = Modifier.size(70.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            email?.take(1)?.uppercase() ?: "U",
-                            color = Color.White,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Black
-                        )
+                        Text(email?.take(1)?.uppercase() ?: "U", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black)
                     }
                 }
                 Spacer(Modifier.width(20.dp))
                 Column {
-                    Text("My Profile", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text("My Profile", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Text(email ?: "User@quizee.com", color = QuizeeSecondaryText, fontSize = 14.sp)
                 }
             }
 
-            // --- Preferences Section ---
             SettingsSection(title = "Preferences") {
                 SettingsToggleItem(
                     title = "Dark Mode",
@@ -95,21 +76,8 @@ fun ProfileScreen(
                     checked = isDark ?: true,
                     onCheckedChange = { viewModel.saveDarkMode(it) }
                 )
-                SettingsToggleItem(
-                    title = "Push Notifications",
-                    icon = Icons.Default.Notifications,
-                    checked = notificationsEnabled,
-                    onCheckedChange = { notificationsEnabled = it }
-                )
-                SettingsToggleItem(
-                    title = "Study Sounds",
-                    icon = Icons.Default.VolumeUp,
-                    checked = soundEnabled,
-                    onCheckedChange = { soundEnabled = it }
-                )
             }
 
-            // --- Goal Section ---
             SettingsSection(title = "Learning Goals") {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -117,38 +85,32 @@ fun ProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Flag, null, tint = Color(0xFF9C27B0), modifier = Modifier.size(24.dp))
+                        Icon(Icons.Default.Flag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(16.dp))
-                        Text("Daily Word Goal", color = Color.White)
+                        Text("Daily Word Goal")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { if (dailyGoal > 1) viewModel.saveDailyGoal(dailyGoal - 1) }) {
-                            Icon(Icons.Default.Remove, null, tint = Color.White)
-                        }
-                        Text("$dailyGoal", color = Color.White, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { viewModel.saveDailyGoal(dailyGoal + 1) }) {
-                            Icon(Icons.Default.Add, null, tint = Color.White)
-                        }
+                        IconButton(onClick = { if (dailyGoal > 1) viewModel.saveDailyGoal(dailyGoal - 1) }) { Icon(Icons.Default.Remove, null) }
+                        Text("$dailyGoal", fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { viewModel.saveDailyGoal(dailyGoal + 1) }) { Icon(Icons.Default.Add, null) }
                     }
                 }
             }
 
-            // --- Account Actions ---
             SettingsSection(title = "Account") {
-                SettingsActionItem(title = "Language Settings", icon = Icons.Default.Language) { 
-                    /* Navigate to specific lang settings if needed */
-                }
-                SettingsActionItem(title = "Cloud Sync", icon = Icons.Default.CloudSync) {
-                    /* viewModel.syncToCloud() */
-                }
-                SettingsActionItem(title = "Help & Support", icon = Icons.Default.HelpOutline) { }
+                SettingsActionItem(title = "Language Settings", icon = Icons.Default.Language) { }
                 SettingsActionItem(title = "Sign Out", icon = Icons.Default.Logout, color = Color.Red) {
                     FirebaseAuth.getInstance().signOut()
-                    onBack() // Or navigate to welcome
+                    onBack()
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            Text(
+                text = "Quizee Version 1.4",
+                color = QuizeeSecondaryText,
+                fontSize = 12.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 32.dp)
+            )
         }
     }
 }
@@ -158,13 +120,11 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
     Column {
         Text(title, color = QuizeeSecondaryText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 12.dp))
         Surface(
-            color = Color(0xFF161B30),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
             shape = RoundedCornerShape(20.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(Modifier.padding(16.dp)) {
-                content()
-            }
+            Column(Modifier.padding(16.dp)) { content() }
         }
     }
 }
@@ -177,29 +137,25 @@ fun SettingsToggleItem(title: String, icon: androidx.compose.ui.graphics.vector.
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = Color(0xFF9C27B0), modifier = Modifier.size(24.dp))
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(16.dp))
-            Text(title, color = Color.White)
+            Text(title)
         }
-        Switch(
-            checked = checked, 
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF9C27B0), checkedTrackColor = Color(0xFFE1BEE7))
-        )
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
 @Composable
-fun SettingsActionItem(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color = Color.White, onClick: () -> Unit) {
+fun SettingsActionItem(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color = Color.Unspecified, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = if (color == Color.Red) color else Color(0xFF9C27B0), modifier = Modifier.size(24.dp))
+            Icon(icon, null, tint = if (color == Color.Red) color else MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(16.dp))
-            Text(title, color = color)
+            Text(title, color = if (color == Color.Red) color else Color.Unspecified)
         }
         Icon(Icons.Default.ChevronRight, null, tint = QuizeeSecondaryText)
     }

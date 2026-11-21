@@ -86,9 +86,10 @@ class MainActivity : ComponentActivity() {
             val profileViewModel: ProfileViewModel = viewModel(factory = factory)
             
             val lang by profileViewModel.appLanguage.collectAsState()
+            val isDarkModePref by profileViewModel.darkMode.collectAsState()
             
-            // Force Dark Theme for the new design
-            val darkTheme = true
+            // Dark Mode persistence logic
+            val darkTheme = isDarkModePref ?: true
 
             LaunchedEffect(lang) { ttsManager.setLanguage(lang) }
 
@@ -148,10 +149,18 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("voice_correction") {
-                        VoiceCorrectionScreen(onBack = { navController.popBackStack() })
+                        VoiceCorrectionScreen(
+                            viewModel = vocadViewModel,
+                            onSpeak = { text, lang -> ttsManager.speak(text, lang) },
+                            onBack = { navController.popBackStack() }
+                        )
                     }
                     composable("passive_listening") {
-                        PassiveListeningScreen(viewModel = vocadViewModel, onSpeak = { ttsManager.speak(it) }, onBack = { navController.popBackStack() })
+                        PassiveListeningScreen(
+                            viewModel = vocadViewModel,
+                            onSpeak = { text, lang -> ttsManager.speak(text, lang) },
+                            onBack = { navController.popBackStack() }
+                        )
                     }
                     composable("lock_screen_preview") {
                         LockScreenGlanceScreen(viewModel = vocadViewModel, onBack = { navController.popBackStack() })
@@ -394,7 +403,7 @@ fun ProjectListScreen(
                 }, 
                 onPickFile = { filePickerLauncher.launch(arrayOf("text/plain", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword", "application/json")) },
                 onUrlImport = { url, from, to ->
-                    viewModel.importFromUrl(url, "Web Mission") // Note: should update VM to take languages
+                    viewModel.importFromUrl(url, "Web Mission", from, to)
                     showImportDialog = false
                     showDonePopup = true
                 }
