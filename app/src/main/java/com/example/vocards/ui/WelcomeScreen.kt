@@ -95,7 +95,7 @@ fun WelcomeScreen(onContinue: (String) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(colors = listOf(Color(0xFFE1BEE7), Color(0xFF9C27B0)))),
+            .background(Brush.verticalGradient(colors = listOf(Color(0xFF60A5FA), Color(0xFF1E3A8A)))),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -108,7 +108,7 @@ fun WelcomeScreen(onContinue: (String) -> Unit) {
                         modifier = Modifier.size(130.dp).scale(pulseScale).clip(RoundedCornerShape(40.dp)).background(Color.White),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Q", fontSize = 85.sp, fontWeight = FontWeight.Black, color = Color(0xFF9C27B0))
+                        Text("Q", fontSize = 85.sp, fontWeight = FontWeight.Black, color = Color(0xFF2563EB))
                     }
                     Spacer(Modifier.height(40.dp))
                     Text("Quizee", fontSize = 60.sp, fontWeight = FontWeight.Black, color = Color.White)
@@ -124,7 +124,7 @@ fun WelcomeScreen(onContinue: (String) -> Unit) {
                     Spacer(Modifier.height(60.dp))
                     Button(
                         onClick = { step = 1 },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF9C27B0)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF2563EB)),
                         modifier = Modifier.fillMaxWidth().height(64.dp),
                         shape = RoundedCornerShape(20.dp)
                     ) {
@@ -213,7 +213,7 @@ fun WelcomeScreen(onContinue: (String) -> Unit) {
                                 }
                             },
                             enabled = email.isNotBlank() && password.length >= 6,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF9C27B0)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF2563EB)),
                             modifier = Modifier.fillMaxWidth().height(60.dp),
                             shape = RoundedCornerShape(16.dp)
                         ) {
@@ -236,7 +236,7 @@ fun WelcomeScreen(onContinue: (String) -> Unit) {
                                 else errorMessage = "Not verified yet. Check your inbox."
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF9C27B0)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF2563EB)),
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {

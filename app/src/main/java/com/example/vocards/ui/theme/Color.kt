@@ -2,14 +2,14 @@ package com.example.vocards.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// --- Professional Light Purple Palette ---
-val QuizeeAccent = Color(0xFF9C27B0) // Primary Purple
-val QuizeeLightPurple = Color(0xFFE1BEE7) // Secondary Light Purple
-val QuizeeBackgroundLight = Color(0xFFF3E5F5) // Very Light Purple Background
-val QuizeeDarkBg = Color(0xFF06091E) // Dark Navy for Contrast in Dark Mode
-val QuizeeCardBg = Color(0xFF161B30)
+// --- Professional Blue Palette ---
+val QuizeeAccent = Color(0xFF2563EB) // Professional Royal Blue Accent
+val QuizeeLightPurple = Color(0xFF60A5FA) // Light Sky Blue Secondary
+val QuizeeBackgroundLight = Color(0xFFF0F7FF) // Clean Light Ice Blue Background
+val QuizeeDarkBg = Color(0xFF0F172A) // Deep Slate Navy for Dark Mode
+val QuizeeCardBg = Color(0xFF1E293B) // Dark Slate Surface Card
 val QuizeeSecondaryText = Color(0xFF94A3B8)
 
-val PurplePrimary = Color(0xFF9C27B0)
-val PurpleSecondary = Color(0xFF7B1FA2)
-val PurpleBackground = Color(0xFFF3E5F5)
+val BluePrimary = Color(0xFF2563EB)
+val BlueSecondary = Color(0xFF1E40AF)
+val BlueBackground = Color(0xFFF0F7FF)
