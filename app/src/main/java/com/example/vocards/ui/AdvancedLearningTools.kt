@@ -61,6 +61,7 @@ fun VoiceCorrectionScreen(
         recognizedText = text
         onlineDefinition = null
         if (text.isNotBlank()) {
+            onSpeak(text, selectedLang)
             val matchingInDb = vocads.any { it.word.equals(text, ignoreCase = true) || it.definition.equals(text, ignoreCase = true) }
             if (!matchingInDb) {
                 scope.launch {
@@ -128,11 +129,16 @@ fun VoiceCorrectionScreen(
                         Card(
                             colors = CardDefaults.cardColors(containerColor = QuizeeCardBg),
                             shape = RoundedCornerShape(20.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, QuizeeAccent.copy(alpha = 0.5f))
                         ) {
                             Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Recognized Speech", style = MaterialTheme.typography.labelSmall, color = QuizeeSecondaryText)
-                                Spacer(Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.CheckCircle, null, tint = Color.Green, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Speech Recognized", style = MaterialTheme.typography.labelSmall, color = Color.Green, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(Modifier.height(8.dp))
                                 Text(
                                     recognizedText, 
                                     style = MaterialTheme.typography.headlineSmall, 
@@ -140,14 +146,16 @@ fun VoiceCorrectionScreen(
                                     textAlign = TextAlign.Center, 
                                     color = Color.White
                                 )
-                                Spacer(Modifier.height(12.dp))
+                                Spacer(Modifier.height(14.dp))
                                 Button(
                                     onClick = { onSpeak(recognizedText, selectedLang) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = QuizeeAccent)
+                                    colors = ButtonDefaults.buttonColors(containerColor = QuizeeAccent),
+                                    shape = CircleShape,
+                                    modifier = Modifier.fillMaxWidth().height(48.dp)
                                 ) {
-                                    Icon(Icons.AutoMirrored.Filled.VolumeUp, null, Modifier.size(20.dp))
+                                    Icon(Icons.AutoMirrored.Filled.VolumeUp, null, Modifier.size(22.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Listen Pronunciation")
+                                    Text("Listen Correct Pronunciation", fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
