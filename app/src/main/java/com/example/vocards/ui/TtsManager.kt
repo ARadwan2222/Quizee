@@ -15,7 +15,7 @@ class TtsManager(context: Context) {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 isInitialized = true
-                tts?.language = currentLocale
+                applyLocale(currentLocale)
                 pendingText?.let { (text, lang) ->
                     speak(text, lang)
                     pendingText = null
@@ -23,6 +23,40 @@ class TtsManager(context: Context) {
             } else {
                 Log.e("TtsManager", "Initialization failed")
             }
+        }
+    }
+
+    private fun detectLanguageFromScript(text: String): String? {
+        var hasArabic = false
+        var hasCyrillic = false
+        var hasDevanagari = false
+        var hasJapanese = false
+        var hasKorean = false
+        var hasChinese = false
+        var hasHebrew = false
+
+        for (ch in text) {
+            val code = ch.code
+            when {
+                code in 0x0600..0x06FF || code in 0x0750..0x077F || code in 0x08A0..0x08FF -> hasArabic = true
+                code in 0x0400..0x04FF -> hasCyrillic = true
+                code in 0x0900..0x097F -> hasDevanagari = true
+                code in 0x3040..0x30FF -> hasJapanese = true
+                code in 0xAC00..0xD7AF -> hasKorean = true
+                code in 0x4E00..0x9FFF -> hasChinese = true
+                code in 0x0590..0x05FF -> hasHebrew = true
+            }
+        }
+
+        return when {
+            hasArabic -> "ar"
+            hasJapanese -> "ja"
+            hasKorean -> "ko"
+            hasChinese -> "zh"
+            hasDevanagari -> "hi"
+            hasCyrillic -> "ru"
+            hasHebrew -> "he"
+            else -> null
         }
     }
 
@@ -60,22 +94,35 @@ class TtsManager(context: Context) {
             "ukrainian", "uk" -> "uk"
             "urdu", "ur", "ur-pk" -> "ur"
             "vietnamese", "vi", "vi-vn" -> "vi"
-            else -> if (clean.contains("-") || clean.length == 2) clean else "en"
+            else -> if (clean.contains("-")) clean.substringBefore("-") else clean
         }
         return Locale.forLanguageTag(code)
+    }
+
+    private fun applyLocale(locale: Locale) {
+        val result = tts?.setLanguage(locale)
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            val fallback = Locale.forLanguageTag(locale.language)
+            val res2 = tts?.setLanguage(fallback)
+            if (res2 == TextToSpeech.LANG_MISSING_DATA || res2 == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.w("TtsManager", "TTS voice data for ${locale.language} is missing or unsupported on device.")
+            }
+        }
     }
 
     fun setLanguage(langCode: String) {
         currentLocale = getLocaleForLanguage(langCode)
         if (isInitialized) {
-            tts?.language = currentLocale
+            applyLocale(currentLocale)
         }
     }
 
     fun speak(text: String, lang: String? = null) {
         if (isInitialized) {
-            val locale = if (!lang.isNullOrBlank()) getLocaleForLanguage(lang) else currentLocale
-            tts?.language = locale
+            val detectedScriptLang = detectLanguageFromScript(text)
+            val effectiveLang = detectedScriptLang ?: lang
+            val locale = if (!effectiveLang.isNullOrBlank()) getLocaleForLanguage(effectiveLang) else currentLocale
+            applyLocale(locale)
             tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VocardsTTS")
         } else {
             pendingText = Pair(text, lang)

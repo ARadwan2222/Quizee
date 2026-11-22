@@ -165,7 +165,11 @@ fun VoiceCorrectionScreen(
                         }
 
                         items(matchingVocads) { vocad ->
-                            val projName = projects.find { it.id == vocad.projectId }?.name ?: "Collection"
+                            val proj = projects.find { it.id == vocad.projectId }
+                            val projName = proj?.name ?: "Collection"
+                            val wordLang = proj?.fromLanguage ?: selectedLang
+                            val defLang = proj?.toLanguage ?: selectedLang
+
                             Card(
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2235)),
                                 shape = RoundedCornerShape(16.dp),
@@ -173,13 +177,18 @@ fun VoiceCorrectionScreen(
                             ) {
                                 Column(Modifier.padding(16.dp)) {
                                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                                        Text(vocad.word, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                                        IconButton(onClick = { onSpeak(vocad.word, selectedLang) }) {
+                                        Text(vocad.word, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.weight(1f))
+                                        IconButton(onClick = { onSpeak(vocad.word, wordLang) }) {
                                             Icon(Icons.AutoMirrored.Filled.VolumeUp, null, tint = QuizeeAccent)
                                         }
                                     }
                                     Spacer(Modifier.height(4.dp))
-                                    Text("Meaning: ${vocad.definition}", color = Color.White.copy(0.9f), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                    Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                                        Text("Meaning: ${vocad.definition}", color = Color.White.copy(0.9f), fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                                        IconButton(onClick = { onSpeak(vocad.definition, defLang) }) {
+                                            Icon(Icons.AutoMirrored.Filled.VolumeUp, null, tint = QuizeeAccent.copy(alpha = 0.7f))
+                                        }
+                                    }
                                     vocad.example?.let {
                                         Spacer(Modifier.height(4.dp))
                                         Text("Example: \"$it\"", color = QuizeeSecondaryText, fontSize = 13.sp, fontStyle = FontStyle.Italic)
