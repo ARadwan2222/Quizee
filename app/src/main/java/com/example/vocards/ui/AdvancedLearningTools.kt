@@ -278,21 +278,33 @@ fun PassiveListeningScreen(
     var isPlaying by remember { mutableStateOf(false) }
     var currentIndex by remember { mutableIntStateOf(0) }
 
+    var selectedWordLang by remember { mutableStateOf("English") }
+    var selectedDefLang by remember { mutableStateOf("Arabic") }
+
     val currentVocad = if (vocads.isNotEmpty() && currentIndex < vocads.size) vocads[currentIndex] else null
     val currentProject = remember(currentVocad, projects) {
         projects.find { it.id == currentVocad?.projectId }
     }
 
-    LaunchedEffect(isPlaying, currentIndex, vocads, projects) {
+    LaunchedEffect(currentProject) {
+        if (currentProject != null) {
+            val fromL = if (currentProject.fromLanguage == "en") "English" else currentProject.fromLanguage
+            val toL = if (currentProject.toLanguage == "en") "Arabic" else currentProject.toLanguage
+            selectedWordLang = fromL
+            selectedDefLang = toL
+        }
+    }
+
+    LaunchedEffect(isPlaying, currentIndex, vocads, projects, selectedWordLang, selectedDefLang) {
         if (isPlaying && vocads.isNotEmpty()) {
             val vocad = vocads[currentIndex]
             val project = projects.find { it.id == vocad.projectId }
-            val wordLang = project?.fromLanguage ?: "English"
-            val defLang = project?.toLanguage ?: "Arabic"
+            val wordLang = selectedWordLang.ifBlank { project?.fromLanguage ?: "English" }
+            val defLang = selectedDefLang.ifBlank { project?.toLanguage ?: "Arabic" }
 
             // Speak word in source language
             onSpeak(vocad.word, wordLang)
-            delay(2500)
+            delay(2800)
             if (!isPlaying) return@LaunchedEffect
             
             // Speak definition in target language

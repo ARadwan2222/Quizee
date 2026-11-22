@@ -15,7 +15,7 @@ class TtsManager(context: Context) {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 isInitialized = true
-                applyLocale(currentLocale)
+                applyLocaleForLanguage(currentLocale.language)
                 pendingText?.let { (text, lang) ->
                     speak(text, lang)
                     pendingText = null
@@ -60,69 +60,54 @@ class TtsManager(context: Context) {
         }
     }
 
-    fun getLocaleForLanguage(lang: String?): Locale {
-        if (lang.isNullOrBlank()) return currentLocale
-        val clean = lang.trim()
-        val code = when (clean.lowercase()) {
-            "arabic", "ar", "ar-sa" -> "ar"
-            "bengali", "bn", "bn-bd" -> "bn"
-            "chinese", "zh", "zh-cn" -> "zh"
-            "dutch", "nl" -> "nl"
-            "english", "en", "en-us", "en-gb" -> "en"
-            "french", "fr", "fr-fr" -> "fr"
-            "german", "de", "de-de" -> "de"
-            "greek", "el" -> "el"
-            "hebrew", "he" -> "he"
-            "hindi", "hi", "hi-in" -> "hi"
-            "indonesian", "id" -> "id"
-            "italian", "it", "it-it" -> "it"
-            "japanese", "ja", "ja-jp" -> "ja"
-            "korean", "ko", "ko-kr" -> "ko"
-            "malay", "ms" -> "ms"
-            "marathi", "mr", "mr-in" -> "mr"
-            "persian", "fa" -> "fa"
-            "polish", "pl" -> "pl"
-            "portuguese", "pt", "pt-pt" -> "pt"
-            "punjabi", "pa", "pa-in" -> "pa"
-            "russian", "ru", "ru-ru" -> "ru"
-            "spanish", "es", "es-es" -> "es"
-            "swedish", "sv" -> "sv"
-            "tamil", "ta", "ta-in" -> "ta"
-            "telugu", "te", "te-in" -> "te"
-            "thai", "th" -> "th"
-            "turkish", "tr", "tr-tr" -> "tr"
-            "ukrainian", "uk" -> "uk"
-            "urdu", "ur", "ur-pk" -> "ur"
-            "vietnamese", "vi", "vi-vn" -> "vi"
-            else -> if (clean.contains("-")) clean.substringBefore("-") else clean
+    fun getCandidateLocales(langInput: String): List<Locale> {
+        val clean = langInput.lowercase().trim()
+        return when (clean) {
+            "arabic", "ar", "ar-sa" -> listOf(Locale.forLanguageTag("ar-SA"), Locale.forLanguageTag("ar-EG"), Locale.forLanguageTag("ar"))
+            "spanish", "es", "es-es" -> listOf(Locale.forLanguageTag("es-ES"), Locale.forLanguageTag("es-US"), Locale.forLanguageTag("es-MX"), Locale.forLanguageTag("es"))
+            "french", "fr", "fr-fr" -> listOf(Locale.forLanguageTag("fr-FR"), Locale.forLanguageTag("fr-CA"), Locale.forLanguageTag("fr"))
+            "german", "de", "de-de" -> listOf(Locale.forLanguageTag("de-DE"), Locale.forLanguageTag("de"))
+            "italian", "it", "it-it" -> listOf(Locale.forLanguageTag("it-IT"), Locale.forLanguageTag("it"))
+            "chinese", "zh", "zh-cn" -> listOf(Locale.forLanguageTag("zh-CN"), Locale.forLanguageTag("zh-TW"), Locale.forLanguageTag("zh"))
+            "japanese", "ja", "ja-jp" -> listOf(Locale.forLanguageTag("ja-JP"), Locale.forLanguageTag("ja"))
+            "korean", "ko", "ko-kr" -> listOf(Locale.forLanguageTag("ko-KR"), Locale.forLanguageTag("ko"))
+            "russian", "ru", "ru-ru" -> listOf(Locale.forLanguageTag("ru-RU"), Locale.forLanguageTag("ru"))
+            "hindi", "hi", "hi-in" -> listOf(Locale.forLanguageTag("hi-IN"), Locale.forLanguageTag("hi"))
+            "portuguese", "pt", "pt-pt" -> listOf(Locale.forLanguageTag("pt-PT"), Locale.forLanguageTag("pt-BR"), Locale.forLanguageTag("pt"))
+            "turkish", "tr", "tr-tr" -> listOf(Locale.forLanguageTag("tr-TR"), Locale.forLanguageTag("tr"))
+            "dutch", "nl" -> listOf(Locale.forLanguageTag("nl-NL"), Locale.forLanguageTag("nl"))
+            "greek", "el" -> listOf(Locale.forLanguageTag("el-GR"), Locale.forLanguageTag("el"))
+            "hebrew", "he" -> listOf(Locale.forLanguageTag("he-IL"), Locale.forLanguageTag("he"))
+            "thai", "th" -> listOf(Locale.forLanguageTag("th-TH"), Locale.forLanguageTag("th"))
+            "vietnamese", "vi" -> listOf(Locale.forLanguageTag("vi-VN"), Locale.forLanguageTag("vi"))
+            "english", "en", "en-us" -> listOf(Locale.US, Locale.UK, Locale.forLanguageTag("en"))
+            else -> listOf(Locale.forLanguageTag(clean))
         }
-        return Locale.forLanguageTag(code)
     }
 
-    private fun applyLocale(locale: Locale) {
-        val result = tts?.setLanguage(locale)
-        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            val fallback = Locale.forLanguageTag(locale.language)
-            val res2 = tts?.setLanguage(fallback)
-            if (res2 == TextToSpeech.LANG_MISSING_DATA || res2 == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.w("TtsManager", "TTS voice data for ${locale.language} is missing or unsupported on device.")
+    private fun applyLocaleForLanguage(langInput: String) {
+        val candidates = getCandidateLocales(langInput)
+        for (loc in candidates) {
+            val res = tts?.setLanguage(loc)
+            if (res != null && res != TextToSpeech.LANG_MISSING_DATA && res != TextToSpeech.LANG_NOT_SUPPORTED) {
+                return
             }
         }
+        Log.w("TtsManager", "TTS engine missing voice data for language: $langInput")
     }
 
     fun setLanguage(langCode: String) {
-        currentLocale = getLocaleForLanguage(langCode)
+        currentLocale = getCandidateLocales(langCode).firstOrNull() ?: Locale.US
         if (isInitialized) {
-            applyLocale(currentLocale)
+            applyLocaleForLanguage(langCode)
         }
     }
 
     fun speak(text: String, lang: String? = null) {
         if (isInitialized) {
             val detectedScriptLang = detectLanguageFromScript(text)
-            val effectiveLang = detectedScriptLang ?: lang
-            val locale = if (!effectiveLang.isNullOrBlank()) getLocaleForLanguage(effectiveLang) else currentLocale
-            applyLocale(locale)
+            val effectiveLang = detectedScriptLang ?: lang ?: currentLocale.language
+            applyLocaleForLanguage(effectiveLang)
             tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VocardsTTS")
         } else {
             pendingText = Pair(text, lang)
