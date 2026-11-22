@@ -51,40 +51,44 @@ fun QuizScreen(viewModel: QuizViewModel, onNavigateBack: () -> Unit, onSpeak: (S
                 QuizResult(score = uiState.score, total = uiState.vocads.size, onFinish = onNavigateBack)
             } else if (uiState.vocads.isNotEmpty()) {
                 val current = uiState.vocads[uiState.currentIndex]
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    LinearProgressIndicator(progress = { (uiState.currentIndex + 1).toFloat() / uiState.vocads.size }, Modifier.fillMaxWidth())
-                    Text("Question ${uiState.currentIndex + 1} of ${uiState.vocads.size}", style = MaterialTheme.typography.labelLarge, color = Color.White)
+                
+                if (uiState.currentMode == QuizMode.BLOCKS) {
+                    BlocksQuiz(
+                        vocads = uiState.vocads,
+                        onFinish = { onNavigateBack() }
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        LinearProgressIndicator(progress = { (uiState.currentIndex + 1).toFloat() / uiState.vocads.size }, Modifier.fillMaxWidth())
+                        Text("Question ${uiState.currentIndex + 1} of ${uiState.vocads.size}", style = MaterialTheme.typography.labelLarge, color = Color.White)
 
-                    when (uiState.currentMode) {
-                        QuizMode.FLASHCARDS -> FlashcardQuiz(current, { viewModel.nextQuestion() }, onSpeak)
-                        QuizMode.WRITING -> WritingQuiz(current, uiState.isAnswerCorrect, { viewModel.submitWritingAnswer(it) }, { viewModel.nextQuestion() }, onSpeak)
-                        QuizMode.MEANING, QuizMode.REVERSE -> ChoiceQuiz(
-                            title = if (uiState.currentMode == QuizMode.MEANING) current.word else current.definition,
-                            options = uiState.options,
-                            isCorrect = uiState.isAnswerCorrect,
-                            correctAnswer = if (uiState.currentMode == QuizMode.MEANING) current.definition else current.word,
-                            onAnswer = { viewModel.submitChoiceAnswer(it) },
-                            onNext = { viewModel.nextQuestion() },
-                            onSpeak = { if (uiState.currentMode == QuizMode.MEANING) onSpeak(current.word) }
-                        )
-                        QuizMode.LEARN -> LearnMode(
-                            vocad = current,
-                            onLearned = { viewModel.markAsLearned() },
-                            onSkip = { viewModel.nextQuestion() },
-                            onSpeak = onSpeak
-                        )
-                        QuizMode.BLOCKS -> BlocksQuiz(
-                            vocads = uiState.vocads,
-                            onFinish = { onNavigateBack() }
-                        )
-                        else -> {}
+                        when (uiState.currentMode) {
+                            QuizMode.FLASHCARDS -> FlashcardQuiz(current, { viewModel.nextQuestion() }, onSpeak)
+                            QuizMode.WRITING -> WritingQuiz(current, uiState.isAnswerCorrect, { viewModel.submitWritingAnswer(it) }, { viewModel.nextQuestion() }, onSpeak)
+                            QuizMode.MEANING, QuizMode.REVERSE -> ChoiceQuiz(
+                                title = if (uiState.currentMode == QuizMode.MEANING) current.word else current.definition,
+                                options = uiState.options,
+                                isCorrect = uiState.isAnswerCorrect,
+                                correctAnswer = if (uiState.currentMode == QuizMode.MEANING) current.definition else current.word,
+                                onAnswer = { viewModel.submitChoiceAnswer(it) },
+                                onNext = { viewModel.nextQuestion() },
+                                onSpeak = { if (uiState.currentMode == QuizMode.MEANING) onSpeak(current.word) }
+                            )
+                            QuizMode.LEARN -> LearnMode(
+                                vocad = current,
+                                onLearned = { viewModel.markAsLearned() },
+                                onSkip = { viewModel.nextQuestion() },
+                                onSpeak = onSpeak
+                            )
+                            else -> {}
+                        }
                     }
                 }
             }

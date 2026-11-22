@@ -22,6 +22,19 @@ class UserPreferences(private val context: Context) {
         val DEFAULT_TASK_SIZE = androidx.datastore.preferences.core.intPreferencesKey("default_task_size")
         val FIRST_TIME_USE = androidx.datastore.preferences.core.booleanPreferencesKey("first_time_use")
         val USER_INTEREST = stringPreferencesKey("user_interest")
+        val NOTIFICATIONS_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("notifications_enabled")
+        val SOUND_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("sound_enabled")
+    }
+
+    val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { it[NOTIFICATIONS_ENABLED] ?: true }
+    val soundEnabled: Flow<Boolean> = context.dataStore.data.map { it[SOUND_ENABLED] ?: true }
+
+    suspend fun saveNotificationsEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[NOTIFICATIONS_ENABLED] = enabled }
+    }
+
+    suspend fun saveSoundEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[SOUND_ENABLED] = enabled }
     }
 
     val userInterest: Flow<String?> = context.dataStore.data.map { it[USER_INTEREST] }

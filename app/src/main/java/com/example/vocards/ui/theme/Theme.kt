@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.Color
 private val DarkColorScheme = darkColorScheme(
     primary = QuizeeAccent,
     secondary = QuizeeLightPurple,
-    tertiary = PurpleSecondary,
+    tertiary = Color(0xFF7B1FA2),
     background = QuizeeDarkBg,
     surface = QuizeeCardBg,
     onPrimary = Color.White,
