@@ -67,7 +67,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        ttsManager = ttsManager ?: TtsManager(this)
         ttsManager = TtsManager(this)
         enableEdgeToEdge()
         setContent {
